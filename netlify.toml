@@ -3,6 +3,10 @@
   publish = "frontend/dist"
   functions = "netlify/functions"
 
+[context.production.environment]
+  # Supabase Postgres connection used by Netlify Functions at runtime
+  DATABASE_URL = "postgres://postgres.pgpvfxagkeexvnmzrsty:MattyMeda890@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"

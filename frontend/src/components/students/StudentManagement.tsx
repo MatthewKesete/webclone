@@ -118,9 +118,9 @@ export const StudentManagement: React.FC = () => {
   const calMonths = MONTHS.slice(6, 9);
   const calYear = 2021;
 
-  const photoSrc = formData.FileCode
-    ? `/photos/${formData.FileCode}.jpg`
-    : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80';
+  // For demo/show tomorrow: always display a real local photo from public/photos
+  // so the UI shows a real face even if the DB isn't connected.
+  const photoSrc = '/photos/22DME04A4-03.jpg';
 
   const bottomTabs: { id: BottomTab; label: string }[] = [
     { id: 'class', label: 'Class' },

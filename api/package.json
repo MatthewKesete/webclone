@@ -15,9 +15,9 @@
     "better-sqlite3": "^11.8.1",
     "cors": "^2.8.6",
     "express": "^4.22.2",
+    "pg": "^8.11.0",
     "serverless-http": "^4.0.0",
     "sqlite3": "^5.1.7",
-    "pg": "^8.11.0",
     "webclone-root": "file:.."
   },
   "devDependencies": {

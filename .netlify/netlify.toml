@@ -12,6 +12,7 @@ command = "npm install && npm install --prefix api && npm install --prefix front
 functions = "E:\\TITDB\\TITDB\\TITdb\\webclone\\netlify\\functions"
 
 [build.environment]
+DATABASE_URL = "postgres://postgres.pgpvfxagkeexvnmzrsty:MattyMeda890@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
 
 [build.processing]
 
