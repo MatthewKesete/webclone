@@ -1,0 +1,1 @@
+{"functions":[{"bundler":"zisi","buildData":{"runtimeAPIVersion":1},"mainFile":"E:\\TITDB\\TITDB\\TITdb\\webclone\\netlify\\functions\\api.js","name":"api","priority":10,"runtimeVersion":"nodejs22.x","path":"E:\\TITDB\\TITDB\\TITdb\\webclone\\.netlify\\functions\\api.zip","runtime":"js"}],"system":{"arch":"x64","platform":"win32"},"timestamp":1788127836004,"version":1}

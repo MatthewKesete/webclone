@@ -1,0 +1,42 @@
+functionsDirectory = "E:\\TITDB\\TITDB\\TITdb\\webclone\\netlify\\functions"
+functionsDirectoryOrigin = "config-v1"
+redirectsOrigin = "config"
+plugins = []
+headers = []
+
+[build]
+publish = "E:\\TITDB\\TITDB\\TITdb\\webclone\\frontend\\dist"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "npm install && npm install --prefix api && npm install --prefix frontend && npm run build --prefix frontend"
+functions = "E:\\TITDB\\TITDB\\TITdb\\webclone\\netlify\\functions"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[functions]
+
+[functions."*"]
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/api/:splat"
+status = 200.0
+force = true
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

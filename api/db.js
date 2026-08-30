@@ -29,6 +29,31 @@ try {
   }
 }
 
+// If Postgres env is present, prefer Postgres (for Supabase)
+if (!db && (process.env.DATABASE_URL || process.env.PGHOST || process.env.SUPABASE_URL)) {
+  try {
+    const { Pool } = require('pg');
+    const poolConfig = {};
+    if (process.env.DATABASE_URL) {
+      poolConfig.connectionString = process.env.DATABASE_URL;
+      poolConfig.ssl = { rejectUnauthorized: false };
+    } else {
+      poolConfig.host = process.env.PGHOST || (process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).hostname.replace(/^/, 'db.') : undefined);
+      poolConfig.port = parseInt(process.env.PGPORT || '5432', 10);
+      poolConfig.database = process.env.PGDATABASE || 'postgres';
+      poolConfig.user = process.env.PGUSER || 'postgres';
+      poolConfig.password = process.env.PGPASSWORD || process.env.SUPABASE_SECRET_KEY;
+      poolConfig.ssl = { rejectUnauthorized: false };
+    }
+    const pool = new Pool(poolConfig);
+    db = pool;
+    mode = 'pg';
+    console.log('[Database] Connected using Postgres (pg) engine.');
+  } catch (e) {
+    console.error('[Database] Failed to initialize Postgres driver:', e.message);
+  }
+}
+
 /**
  * Standard parameterized query interface.
  * Uses standard `?` positional parameters for portability.
@@ -39,9 +64,16 @@ function all(sql, params = []) {
   if (mode === 'better-sqlite3') {
     return db.prepare(sql).all(...params);
   } else {
-    return new Promise((resolve, reject) => {
-      db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
-    });
+    if (mode === 'sqlite3') {
+      return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
+      });
+    }
+    // pg
+    if (mode === 'pg') {
+      return db.query(sql, params).then(res => res.rows);
+    }
+    return Promise.reject(new Error('Unsupported DB mode'));
   }
 }
 
@@ -50,9 +82,15 @@ function get(sql, params = []) {
   if (mode === 'better-sqlite3') {
     return db.prepare(sql).get(...params);
   } else {
-    return new Promise((resolve, reject) => {
-      db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
-    });
+    if (mode === 'sqlite3') {
+      return new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
+      });
+    }
+    if (mode === 'pg') {
+      return db.query(sql, params).then(res => res.rows[0] || null);
+    }
+    return Promise.reject(new Error('Unsupported DB mode'));
   }
 }
 
@@ -62,12 +100,18 @@ function run(sql, params = []) {
     const result = db.prepare(sql).run(...params);
     return { changes: result.changes, lastInsertRowid: result.lastInsertRowid };
   } else {
-    return new Promise((resolve, reject) => {
-      db.run(sql, params, function(err) {
-        if (err) return reject(err);
-        resolve({ changes: this.changes, lastInsertRowid: this.lastID });
+    if (mode === 'sqlite3') {
+      return new Promise((resolve, reject) => {
+        db.run(sql, params, function(err) {
+          if (err) return reject(err);
+          resolve({ changes: this.changes, lastInsertRowid: this.lastID });
+        });
       });
-    });
+    }
+    if (mode === 'pg') {
+      return db.query(sql, params).then(res => ({ changes: res.rowCount }));
+    }
+    return Promise.reject(new Error('Unsupported DB mode'));
   }
 }
 
