@@ -57,43 +57,8 @@ function buildAttendance(fileCode: string) {
   return data;
 }
 
-// Static FieldInput component defined OUTSIDE StudentManagement
-// to guarantee React never unmounts/remounts <input> elements on keystroke!
-interface FieldInputProps {
-  label: string;
-  field?: keyof Student;
-  value?: any;
-  formData?: Partial<Student>;
-  onChange?: (v: string) => void;
-  onFieldChange?: (field: keyof Student, v: any) => void;
-  type?: string;
-  readOnly?: boolean;
-  children?: React.ReactNode;
-  w?: string;
-}
 
-const FieldInput: React.FC<FieldInputProps> = ({
-  label, field, value, formData, onChange, onFieldChange, type = 'text', readOnly, children, w = 'w-28'
-}) => {
-  const displayVal = value ?? (field && formData ? (formData[field] as any) ?? '' : '');
-  return (
-    <div className="flex items-center gap-1">
-      <label className={`text-zinc-400 flex-shrink-0 text-[11px] ${w}`}>{label}:</label>
-      {children || (
-        <input
-          type={type}
-          value={displayVal}
-          onChange={e => {
-            if (onChange) onChange(e.target.value);
-            else if (field && onFieldChange) onFieldChange(field, e.target.value);
-          }}
-          readOnly={readOnly}
-          className={`tit-input flex-1 ${readOnly ? 'text-zinc-400' : ''}`}
-        />
-      )}
-    </div>
-  );
-};
+
 
 export const StudentManagement: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -214,17 +179,30 @@ export const StudentManagement: React.FC = () => {
     { id: 'transcript', label: 'Transcript' },
   ];
 
-  const F = (props: {
-    label: string; field?: keyof Student; value?: any;
-    onChange?: (v: string) => void; type?: string; readOnly?: boolean;
-    children?: React.ReactNode; w?: string;
-  }) => (
-    <FieldInput
-      {...props}
-      formData={formData}
-      onFieldChange={upd}
-    />
-  );
+  const renderF = (
+    label: string,
+    field?: keyof Student,
+    options?: { value?: any; type?: string; readOnly?: boolean; w?: string; children?: React.ReactNode; onChange?: (v: string) => void }
+  ) => {
+    const displayVal = options?.value ?? (field ? (formData[field] as any) ?? '' : '');
+    return (
+      <div className="flex items-center gap-1" key={field || label}>
+        <label className={`text-zinc-400 flex-shrink-0 text-[11px] ${options?.w || 'w-28'}`}>{label}:</label>
+        {options?.children || (
+          <input
+            type={options?.type || 'text'}
+            value={displayVal}
+            onChange={e => {
+              if (options?.onChange) options.onChange(e.target.value);
+              else if (field) upd(field, e.target.value);
+            }}
+            readOnly={options?.readOnly}
+            className={`tit-input flex-1 ${options?.readOnly ? 'text-zinc-400' : ''}`}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="text-xs select-none pb-8" style={{ fontFamily: "'Segoe UI', Tahoma, sans-serif" }}>
@@ -317,23 +295,23 @@ export const StudentManagement: React.FC = () => {
           {/* CENTER: two-column form */}
           <div className="flex-1 min-w-0 space-y-1">
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-              <F label="File Code" field="FileCode" /><div/>
-              <F label="First Name" field="SName" />
-              <F label="Fathers Name" field="FathersName" />
-              <F label="GrandFather" field="GrandFathersName" />
-              <F label="Graduation Date" field="DateOfGraduation" />
-              <F label="Registration Date" field="DateOfRegistration" />
-              <F label="ID No." field="IDNo" />
-              <F label="ASC No." field="StudentASCNo" />
-              <F label="Phone No." field="PhoneNumber" />
+              {renderF("File Code", "FileCode")}<div/>
+              {renderF("First Name", "SName")}
+              {renderF("Fathers Name", "FathersName")}
+              {renderF("GrandFather", "GrandFathersName")}
+              {renderF("Graduation Date", "DateOfGraduation")}
+              {renderF("Registration Date", "DateOfRegistration")}
+              {renderF("ID No.", "IDNo")}
+              {renderF("ASC No.", "StudentASCNo")}
+              {renderF("Phone No.", "PhoneNumber")}
 
-              <F label="Gender" field="Gender">
+              {renderF("Gender", "Gender", { children: (
                 <select value={formData.Gender||'Female'} onChange={e => upd('Gender', e.target.value)} className="tit-input flex-1">
                   <option>Female</option><option>Male</option>
                 </select>
-              </F>
-              <F label="Birth Place" field="BIrthPlace" />
-              <F label="Age" field="Age" type="number" />
+              )})}
+              {renderF("Birth Place", "BIrthPlace")}
+              {renderF("Age", "Age", { type: "number" })}
               <div className="flex items-center gap-2">
                 <label className="text-zinc-400 w-28 flex-shrink-0 text-[11px]">Completed:</label>
                 {['Yes','No'].map(v => (
@@ -346,29 +324,29 @@ export const StudentManagement: React.FC = () => {
                 ))}
               </div>
 
-              <F label="Nationality" field="Nationality">
+              {renderF("Nationality", "Nationality", { children: (
                 <select value={formData.Nationality||'Eritrean'} onChange={e => upd('Nationality', e.target.value)} className="tit-input flex-1">
                   <option>Eritrean</option><option>Ethiopian</option><option>Other</option>
                 </select>
-              </F>
-              <F label="Payment Status" field="PaymentCondition">
+              )})}
+              {renderF("Payment Status", "PaymentCondition", { children: (
                 <select value={formData.PaymentCondition||'Cash'} onChange={e => upd('PaymentCondition', e.target.value)} className="tit-input flex-1">
                   <option>Cash</option><option>Completed</option><option>Partial</option><option>Pending</option>
                 </select>
-              </F>
+              )})}
             </div>
 
             <div className="border-t border-[#2a2a2a] my-1" />
 
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-              <F label="Class Code" readOnly><select className="tit-input flex-1"><option>21ACC09A5</option></select></F>
-              <F label="Schedule Code" readOnly><select className="tit-input flex-1"><option></option></select></F>
-              <F label="Class" readOnly><select className="tit-input flex-1"><option>Accounting</option></select></F>
-              <F label="Credit Hours" value="36" readOnly />
-              <F label="Hours/Week" value="3" readOnly />
-              <F label="Class/Week" value="2" readOnly />
-              <F label="No Of Students" value="10" readOnly />
-              <F label="Instructor Name" readOnly><select className="tit-input flex-1"><option></option></select></F>
+              {renderF("Class Code", undefined, { readOnly: true, children: <select className="tit-input flex-1"><option>21ACC09A5</option></select> })}
+              {renderF("Schedule Code", undefined, { readOnly: true, children: <select className="tit-input flex-1"><option></option></select> })}
+              {renderF("Class", undefined, { readOnly: true, children: <select className="tit-input flex-1"><option>Accounting</option></select> })}
+              {renderF("Credit Hours", undefined, { value: "36", readOnly: true })}
+              {renderF("Hours/Week", undefined, { value: "3", readOnly: true })}
+              {renderF("Class/Week", undefined, { value: "2", readOnly: true })}
+              {renderF("No Of Students", undefined, { value: "10", readOnly: true })}
+              {renderF("Instructor Name", undefined, { readOnly: true, children: <select className="tit-input flex-1"><option></option></select> })}
 
               <div className="flex items-center gap-1">
                 <label className="text-zinc-400 w-28 flex-shrink-0 text-[11px]">Male:</label>
@@ -385,24 +363,24 @@ export const StudentManagement: React.FC = () => {
                 </div>
               </div>
 
-              <F label="Start Date" value="9/21/2023" readOnly />
-              <F label="End Date" value="12/21/2023" readOnly />
-              <F label="Instructor FileCode" readOnly><select className="tit-input flex-1"><option></option></select></F>
-              <F label="Guest Instructor" readOnly><select className="tit-input flex-1"><option></option></select></F>
+              {renderF("Start Date", undefined, { value: "9/21/2023", readOnly: true })}
+              {renderF("End Date", undefined, { value: "12/21/2023", readOnly: true })}
+              {renderF("Instructor FileCode", undefined, { readOnly: true, children: <select className="tit-input flex-1"><option></option></select> })}
+              {renderF("Guest Instructor", undefined, { readOnly: true, children: <select className="tit-input flex-1"><option></option></select> })}
 
               <div className="flex items-center gap-1">
                 <label className="text-zinc-400 w-28 flex-shrink-0 text-[11px]">Days:</label>
                 <select className="tit-input flex-1"><option></option></select>
                 <input readOnly value="" className="tit-input w-12 text-zinc-400 ml-1" />
               </div>
-              <F label="Room" value="" readOnly />
+              {renderF("Room", undefined, { value: "", readOnly: true })}
 
               <div className="flex items-center gap-1">
                 <label className="text-zinc-400 w-28 flex-shrink-0 text-[11px]">Time:</label>
                 <select className="tit-input flex-1"><option></option></select>
                 <input readOnly value="" className="tit-input w-12 text-zinc-400 ml-1" />
               </div>
-              <F label="Class Status" value="" readOnly />
+              {renderF("Class Status", undefined, { value: "", readOnly: true })}
             </div>
           </div>
 
@@ -459,43 +437,43 @@ export const StudentManagement: React.FC = () => {
 
           {activeBottomTab === 'class' && (
             <div className="grid grid-cols-3 gap-x-4 gap-y-1.5">
-              <F label="Class Code" value="21ACC09A5" readOnly />
-              <F label="Course" value="Accounting" readOnly />
-              <F label="Class Status" value="Active" readOnly />
-              <F label="Start Date" value="9/21/2023" readOnly />
-              <F label="End Date" value="12/21/2023" readOnly />
-              <F label="Credit Hours" value="36" readOnly />
+              {renderF("Class Code", undefined, { value: "21ACC09A5", readOnly: true })}
+              {renderF("Course", undefined, { value: "Accounting", readOnly: true })}
+              {renderF("Class Status", undefined, { value: "Active", readOnly: true })}
+              {renderF("Start Date", undefined, { value: "9/21/2023", readOnly: true })}
+              {renderF("End Date", undefined, { value: "12/21/2023", readOnly: true })}
+              {renderF("Credit Hours", undefined, { value: "36", readOnly: true })}
             </div>
           )}
 
           {activeBottomTab === 'finance' && (
             <div className="grid grid-cols-3 gap-x-4 gap-y-1.5">
-              <F label="Class Fee" field="ClassFee" type="number" />
-              <F label="Total" field="Total" type="number" />
-              <F label="Payment Condition" field="PaymentCondition">
+              {renderF("Class Fee", "ClassFee", { type: "number" })}
+              {renderF("Total", "Total", { type: "number" })}
+              {renderF("Payment Condition", "PaymentCondition", { children: (
                 <select value={formData.PaymentCondition||'Cash'} onChange={e => upd('PaymentCondition', e.target.value)} className="tit-input flex-1">
                   <option>Cash</option><option>Completed</option><option>Partial</option><option>Pending</option>
                 </select>
-              </F>
-              <F label="1st Payment" field="FirstPayment" type="number" />
-              <F label="1st Date" field="FirstPaymentDate" />
-              <F label="1st Check No" field="FirstPaymentCheckNo" />
-              <F label="2nd Payment" field="SecondPayment" type="number" />
-              <F label="2nd Date" field="SecondPaymentDate" />
-              <F label="3rd Payment" field="ThirdPayment" type="number" />
-              <F label="3rd Date" field="ThirdPaymentDate" />
-              <F label="3rd Check No" field="ThirdPaymentCheckNo" />
-              <F label="Completion" field="PaymentCompletion" />
+              )})}
+              {renderF("1st Payment", "FirstPayment", { type: "number" })}
+              {renderF("1st Date", "FirstPaymentDate")}
+              {renderF("1st Check No", "FirstPaymentCheckNo")}
+              {renderF("2nd Payment", "SecondPayment", { type: "number" })}
+              {renderF("2nd Date", "SecondPaymentDate")}
+              {renderF("3rd Payment", "ThirdPayment", { type: "number" })}
+              {renderF("3rd Date", "ThirdPaymentDate")}
+              {renderF("3rd Check No", "ThirdPaymentCheckNo")}
+              {renderF("Completion", "PaymentCompletion")}
             </div>
           )}
 
           {activeBottomTab === 'health' && (
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              <F label="Guardian Full Name" field="GuardiansFullName" w="w-36" />
-              <F label="Relation" field="Relation" w="w-36" />
-              <F label="Guardian Phone" field="GuardianPhoneNumber" w="w-36" />
-              <F label="Occupation" field="Occupation" w="w-36" />
-              <F label="Address" field="Address" w="w-36" />
+              {renderF("Guardian Full Name", "GuardiansFullName", { w: "w-36" })}
+              {renderF("Relation", "Relation", { w: "w-36" })}
+              {renderF("Guardian Phone", "GuardianPhoneNumber", { w: "w-36" })}
+              {renderF("Occupation", "Occupation", { w: "w-36" })}
+              {renderF("Address", "Address", { w: "w-36" })}
               <div className="flex items-start gap-1 col-span-2">
                 <label className="text-zinc-400 w-36 flex-shrink-0 text-[11px] mt-1">Health Background:</label>
                 <textarea rows={2} value={formData.StudentsHeathBackground||''} onChange={e => upd('StudentsHeathBackground', e.target.value)} className="tit-input flex-1 resize-none" />
@@ -505,13 +483,13 @@ export const StudentManagement: React.FC = () => {
 
           {activeBottomTab === 'education' && (
             <div className="grid grid-cols-3 gap-x-4 gap-y-1.5">
-              <F label="Education Level" field="EducationLevel" />
-              <F label="Previous School" field="PreviousORCurrentschool" w="w-32" />
+              {renderF("Education Level", "EducationLevel")}
+              {renderF("Previous School", "PreviousORCurrentschool", { w: "w-32" })}
               <div />
-              <F label="Assignment" field="Assignment" type="number" />
-              <F label="Class Activity" field="ClassActivitynAttendance" type="number" />
-              <F label="Final Exam" field="FinalExam" type="number" />
-              <F label="Overall" field="Overall" type="number" />
+              {renderF("Assignment", "Assignment", { type: "number" })}
+              {renderF("Class Activity", "ClassActivitynAttendance", { type: "number" })}
+              {renderF("Final Exam", "FinalExam", { type: "number" })}
+              {renderF("Overall", "Overall", { type: "number" })}
               <div className="flex items-center gap-2">
                 <label className="text-zinc-400 w-28 flex-shrink-0 text-[11px]">Completed:</label>
                 {['Yes','No'].map(v => (
@@ -520,18 +498,18 @@ export const StudentManagement: React.FC = () => {
                   </label>
                 ))}
               </div>
-              <F label="Graduation Date" field="DateOfGraduation" />
+              {renderF("Graduation Date", "DateOfGraduation")}
             </div>
           )}
 
           {activeBottomTab === 'note' && (
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              <F label="Manual File Code" field="ManualFileCode" w="w-36" />
-              <F label="Manual Condition" field="ManualCondition" w="w-36" />
-              <F label="Reception Date" field="ManualReceptionDate" w="w-36" />
-              <F label="Return Date" field="ManualReturnDate" w="w-36" />
-              <F label="Batch Reception" field="BatchrReceptionDate" w="w-36" />
-              <F label="Batch Return" field="BatchReturnDate" w="w-36" />
+              {renderF("Manual File Code", "ManualFileCode", { w: "w-36" })}
+              {renderF("Manual Condition", "ManualCondition", { w: "w-36" })}
+              {renderF("Reception Date", "ManualReceptionDate", { w: "w-36" })}
+              {renderF("Return Date", "ManualReturnDate", { w: "w-36" })}
+              {renderF("Batch Reception", "BatchrReceptionDate", { w: "w-36" })}
+              {renderF("Batch Return", "BatchReturnDate", { w: "w-36" })}
               <div className="flex items-start gap-1 col-span-2">
                 <label className="text-zinc-400 w-36 flex-shrink-0 text-[11px] mt-1">Manual Remark:</label>
                 <textarea rows={2} value={formData.ManualRemark||''} onChange={e => upd('ManualRemark', e.target.value)} className="tit-input flex-1 resize-none" />
@@ -568,6 +546,7 @@ export const StudentManagement: React.FC = () => {
           )}
         </div>
       </div>
+
 
       {/* STUDENT LIST MODAL */}
       {showStudentListModal && (
