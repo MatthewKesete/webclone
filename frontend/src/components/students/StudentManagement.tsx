@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Plus, Minus, Search, X, Award, Printer, Save, Link as LinkIcon
@@ -56,6 +56,44 @@ function buildAttendance(fileCode: string) {
   });
   return data;
 }
+
+// Static FieldInput component defined OUTSIDE StudentManagement
+// to guarantee React never unmounts/remounts <input> elements on keystroke!
+interface FieldInputProps {
+  label: string;
+  field?: keyof Student;
+  value?: any;
+  formData?: Partial<Student>;
+  onChange?: (v: string) => void;
+  onFieldChange?: (field: keyof Student, v: any) => void;
+  type?: string;
+  readOnly?: boolean;
+  children?: React.ReactNode;
+  w?: string;
+}
+
+const FieldInput: React.FC<FieldInputProps> = ({
+  label, field, value, formData, onChange, onFieldChange, type = 'text', readOnly, children, w = 'w-28'
+}) => {
+  const displayVal = value ?? (field && formData ? (formData[field] as any) ?? '' : '');
+  return (
+    <div className="flex items-center gap-1">
+      <label className={`text-zinc-400 flex-shrink-0 text-[11px] ${w}`}>{label}:</label>
+      {children || (
+        <input
+          type={type}
+          value={displayVal}
+          onChange={e => {
+            if (onChange) onChange(e.target.value);
+            else if (field && onFieldChange) onFieldChange(field, e.target.value);
+          }}
+          readOnly={readOnly}
+          className={`tit-input flex-1 ${readOnly ? 'text-zinc-400' : ''}`}
+        />
+      )}
+    </div>
+  );
+};
 
 export const StudentManagement: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -144,20 +182,23 @@ export const StudentManagement: React.FC = () => {
     catch (err: any) { alert(`Delete failed: ${err.message}`); }
   };
 
-  const upd = (key: keyof Student, value: any) =>
+  const upd = useCallback((key: keyof Student, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  }, []);
 
-  const filteredStudents = students.filter(s =>
-    (s.SName||'').toLowerCase().includes(tableSearch.toLowerCase()) ||
-    (s.FileCode||'').toLowerCase().includes(tableSearch.toLowerCase()) ||
-    (s.StudentASCNo||'').toLowerCase().includes(tableSearch.toLowerCase())
-  );
+  const filteredStudents = useMemo(() => {
+    return students.filter(s =>
+      (s.SName||'').toLowerCase().includes(tableSearch.toLowerCase()) ||
+      (s.FileCode||'').toLowerCase().includes(tableSearch.toLowerCase()) ||
+      (s.StudentASCNo||'').toLowerCase().includes(tableSearch.toLowerCase())
+    );
+  }, [students, tableSearch]);
 
-  const attendance = buildAttendance(formData.FileCode || '');
-  const totalPresent = MONTHS.reduce((sum, m) =>
-    sum + Object.values(attendance[m]||{}).filter(v => v==='present').length, 0);
-  const totalDays = MONTHS.reduce((sum, m) =>
-    sum + Object.keys(attendance[m]||{}).length, 0);
+  const attendance = useMemo(() => buildAttendance(formData.FileCode || ''), [formData.FileCode]);
+  const totalPresent = useMemo(() => MONTHS.reduce((sum, m) =>
+    sum + Object.values(attendance[m]||{}).filter(v => v==='present').length, 0), [attendance]);
+  const totalDays = useMemo(() => MONTHS.reduce((sum, m) =>
+    sum + Object.keys(attendance[m]||{}).length, 0), [attendance]);
   const attendPct = totalDays > 0 ? Math.round((totalPresent / totalDays) * 100) : 0;
 
   // Visible calendar months (last 3 with data)
@@ -178,18 +219,11 @@ export const StudentManagement: React.FC = () => {
     onChange?: (v: string) => void; type?: string; readOnly?: boolean;
     children?: React.ReactNode; w?: string;
   }) => (
-    <div className="flex items-center gap-1">
-      <label className={`text-zinc-400 flex-shrink-0 text-[11px] ${props.w || 'w-28'}`}>{props.label}:</label>
-      {props.children || (
-        <input
-          type={props.type || 'text'}
-          value={props.value ?? (props.field ? (formData[props.field] as any) ?? '' : '')}
-          onChange={e => props.onChange ? props.onChange(e.target.value) : props.field && upd(props.field, e.target.value)}
-          readOnly={props.readOnly}
-          className={`tit-input flex-1 ${props.readOnly ? 'text-zinc-400' : ''}`}
-        />
-      )}
-    </div>
+    <FieldInput
+      {...props}
+      formData={formData}
+      onFieldChange={upd}
+    />
   );
 
   return (
