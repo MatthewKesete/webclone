@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Certificate - Brhan Training Center</title>
+    
+    <!-- Importing Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Certificate Dimensions & Base (Clean White/Silver Vibe) */
+        .certificate-container {
+            width: 1100px;
+            height: 800px;
+            background: radial-gradient(circle at center, #ffffff 0%, #f4f4f5 100%);
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Left Side Logo Container */
+        .logo-sidebar {
+            position: absolute;
+            left: 45px;
+            top: 8%;
+            height: 68%;
+            width: 315px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 10;
+        }
+
+        .logo-sidebar img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 15px 25px rgba(249, 115, 22, 0.2));
+            opacity: 0.95;
+        }
+
+        /* Main Content Layout */
+        .content-layer {
+            position: absolute;
+            right: 50px;
+            top: 50px;
+            bottom: 50px;
+            width: 650px;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            z-index: 10;
+        }
+
+        /* ---- NEW: Photo Placeholder ---- */
+        .photo-placeholder {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 100px;
+            height: 125px;
+            border: 2px dashed #C89B2C;
+            background-color: #fcfcfd;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
+            z-index: 15;
+        }
+
+        .photo-placeholder span {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            color: #71717a;
+            letter-spacing: 2px;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Typography Configurations */
+        .cert-header {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: #18181b; 
+            letter-spacing: 6px;
+            margin-top: 10px;
+            margin-bottom: -5px;
+        }
+
+        .cert-subheader {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 22px;
+            font-weight: 300;
+            color: #52525b;
+            letter-spacing: 10px;
+            margin-bottom: 40px;
+        }
+
+        .presentation-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3f3f46;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+        }
+
+        /* Updated Name Font: Premium, Clear, and Italicized */
+        .student-name-container {
+            width: 100%;
+            border-bottom: 1px solid #C89B2C;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .student-name {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 52px; /* Adjusted size for clarity and length */
+            line-height: 1.2;
+            /* Precise Gold-to-Orange gradient */
+            background: linear-gradient(to right, #8A5A12 0%, #B8862B 35%, #D4AF37 70%, #F0C75E 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            text-shadow: 2px 2px 10px rgba(212, 175, 55, 0.2);
+            padding: 0 10px;
+        }
+
+        /* Body & Description */
+        .description {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: #52525b;
+            line-height: 1.9;
+            max-width: 550px;
+            margin-bottom: 25px;
+        }
+
+        .course-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #18181b;
+            letter-spacing: 2px;
+            margin-bottom: auto;
+        }
+
+        /* Footer Section */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+
+        .signature-box .value {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #18181b;
+            height: 35px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 5px;
+        }
+
+        .solid-line { border-bottom: 1px solid #18181b; margin-bottom: 8px; }
+
+        .signature-box .label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: #71717a;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Golden Premium 2022-Style Seal */
+        .seal {
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, #FFDF73, #D4AF37, #996B1C, #D4AF37, #FFDF73);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+            position: relative;
+            transform: translateY(15px);
+        }
+
+        .seal-inner {
+            width: 94px;
+            height: 94px;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #18181b;
+        }
+
+        .seal-text-1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #D4AF37;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .seal-text-2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            color: #fff;
+            letter-spacing: 3px;
+        }
+
+        .seal-stars {
+            color: #D4AF37;
+            font-size: 12px;
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+		
+        .contact-info {
+            position: absolute;
+            left: 45px;
+            top: 72%;
+            width: 315px;
+            text-align: center;
+            font-family: 'Montserrat', sans-serif;
+            color: #52525b;
+            font-size: 10.5px;
+            line-height: 1.55;
+            margin: 0;
+            z-index: 15;
+        }
+
+        .contact-info strong {
+            color: #B8862B;
+            font-size: 11px;
+            letter-spacing: 2.5px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .contact-info .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #C89B2C, transparent);
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="certificate-container">
+        
+        <!-- Custom Stethoscope Edges (Gold/Orange Gradient) -->
+        <svg viewBox="0 0 1045 800" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:5; pointer-events:none;">
+            <defs>
+                <linearGradient id="gold-orange-grad" x1="0%" y1="0%" x2="150%" y2="100%">
+                    <stop offset="0%" stop-color="#D4AF37" />
+                    <stop offset="40%" stop-color="#FBF5B7" />
+                    <stop offset="60%" stop-color="#F97316" />
+                    <stop offset="100%" stop-color="#D4AF37" />
+                </linearGradient>
+
+                <linearGradient id="metal-grad" x1="0%" y1="0%" x2="150%" y2="100%">
+                    <stop offset="0%" stop-color="#f8fafc"/>
+                    <stop offset="50%" stop-color="#94a3b8"/>
+                    <stop offset="100%" stop-color="#e2e8f0"/>
+                </linearGradient>
+
+                <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                    <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000" flood-opacity="0.12" />
+                </filter>
+            </defs>
+
+            <path d="
+                M 1020 160 
+                L 1020 740 A 30 30 0 0 1 990 770
+                L 40 770 A 30 30 0 0 1 10 740
+                L 10 40 A 30 30 0 0 1 40 10
+                L 890 10 A 30 30 0 0 1 920 40
+                L 920 100
+            " fill="none" stroke="url(#gold-orange-grad)" stroke-width="11" filter="url(#shadow)" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <polygon points="1010,160 1030,160 1020,140" fill="url(#metal-grad)" filter="url(#shadow)"/>
+            
+            <path d="M 1020 145 C 990 110, 990 80, 990 40" fill="none" stroke="url(#metal-grad)" stroke-width="6" filter="url(#shadow)" stroke-linecap="round"/>
+            <path d="M 1020 145 C 1050 110, 1050 80, 1050 40" fill="none" stroke="url(#metal-grad)" stroke-width="6" filter="url(#shadow)" stroke-linecap="round"/>
+            
+            <ellipse cx="990" cy="35" rx="5" ry="9" fill="#27272a" transform="rotate(-15 990 35)"/>
+            <ellipse cx="1050" cy="35" rx="5" ry="9" fill="#27272a" transform="rotate(15 1050 35)"/>
+
+            <!-- Stethoscope Chest Piece at top right corner -->
+            <circle cx="920" cy="120" r="30" fill="#ffffff" stroke="url(#gold-orange-grad)" stroke-width="7" filter="url(#shadow)"/>
+            <circle cx="920" cy="120" r="16" fill="url(#metal-grad)"/>
+            <circle cx="920" cy="120" r="5" fill="#27272a"/>
+        </svg>
+
+        <!-- Left Side: Massive Logo Drop Down -->
+        <div class="logo-sidebar">
+            <img src="brhan logo.png" alt="Brhan Logo">
+        </div>
+
+        <!-- Contact Information cleanly seated in the sidebar -->
+        <div class="contact-info">
+            <strong>LOCATION</strong>
+            Kansanga opposite<br>Eco Mart next to Jolly Court<br>Kampala, Uganda
+            
+            <div class="divider"></div>
+            
+            <strong>CONTACT</strong>
+            +256 708 520 186 <br> https://www.brhan.academy <br> brhanacademykampala@gmail.com
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-layer">
+
+            <!-- New Photo Box Placeholder -->
+            <div class="photo-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C89B2C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Photo</span>
+            </div>
+            
+            <h1 class="cert-header">CERTIFICATE</h1>
+            <h2 class="cert-subheader">OF COMPLETION</h2>
+            
+            <div class="presentation-text">This certificate is proudly presented to</div>
+
+            <div class="student-name-container">
+                <!-- Swapped to Premium Playfair Italic for maximum clarity -->
+                <h3 class="student-name">Yordanos Haile Gebremichael</h3>
+            </div>
+
+            <p class="description">
+                has successfully completed a rigorous six-month training programme, demonstrating exceptional practical skills, medical knowledge, and unwavering dedication to the field of healthcare.
+            </p>
+
+            <div class="presentation-text" style="margin-bottom: 5px; font-size: 11px;">Awarded Title</div>
+            <h4 class="course-name">CERTIFIED NURSING ASSISTANT</h4>
+
+            <div class="footer">
+                
+                <!-- Date area -->
+                <div class="signature-box">
+                    <div class="value">1st June 2026</div>
+                    <div class="solid-line"></div>
+                    <div class="label">DATE OF COMPLETION</div>
+                </div>
+
+                <!-- Central Authentic Gold Award Seal -->
+                <div class="seal">
+                    <div class="seal-inner">
+                        <div class="seal-text-1">2026</div>
+                        <div class="seal-text-2">AWARD</div>
+                        <div class="seal-stars">★★★</div>
+                    </div>
+                </div>
+
+                <!-- Signature area -->
+                <div class="signature-box">
+                    <div class="value"></div>
+                    <div class="solid-line"></div>
+                    <div class="label">DEAN OF NURSING SCHOOL</div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

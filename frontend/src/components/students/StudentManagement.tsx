@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Plus, Minus, Search, X
+  Plus, Minus, Search, X, Award, Printer, Save, Link as LinkIcon
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Student } from '../../services/api';
@@ -16,6 +16,29 @@ const ATTEND_COLOR: Record<string, string> = {
   permission: 'bg-orange-500 text-white',
   late:       'bg-blue-500 text-white',
 };
+
+// Convert Google Drive share link or standard photo URL into direct image URL
+export function getDirectImageUrl(url: string | undefined | null): string {
+  if (!url || !url.trim()) return '/photos/22DME04A4-03.jpg';
+  const trimmed = url.trim();
+
+  let fileId = '';
+  const match1 = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match1 && match1[1]) {
+    fileId = match1[1];
+  } else {
+    const match2 = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match2 && match2[1]) {
+      fileId = match2[1];
+    }
+  }
+
+  if (fileId) {
+    return `https://lh3.googleusercontent.com/d/${fileId}`;
+  }
+
+  return trimmed;
+}
 
 // Deterministic demo attendance based on fileCode
 function buildAttendance(fileCode: string) {
@@ -39,6 +62,7 @@ export const StudentManagement: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>('class');
   const [showStudentListModal, setShowStudentListModal] = useState<boolean>(false);
+  const [showCertificateModal, setShowCertificateModal] = useState<boolean>(false);
   const [tableSearch, setTableSearch] = useState<string>('');
   const [formData, setFormData] = useState<Partial<Student>>({});
   const [formSaving, setFormSaving] = useState<boolean>(false);
@@ -74,7 +98,7 @@ export const StudentManagement: React.FC = () => {
     Gender: 'Female', Age: 20, Nationality: 'Eritrean',
     DateOfRegistration: new Date().toISOString().split('T')[0],
     Completed: 'No', PaymentCondition: 'Cash',
-    ClassFee: 450, Total: 450, FirstPayment: 0,
+    ClassFee: 450, Total: 450, FirstPayment: 0, SPhoto: ''
   });
 
   const handleSave = async () => {
@@ -87,9 +111,31 @@ export const StudentManagement: React.FC = () => {
         await api.createStudent(formData);
       }
       await fetchAllData();
+      alert('Student record saved successfully to Supabase/Database!');
     } catch (err: any) {
       alert(`Save failed: ${err.message}`);
     } finally { setFormSaving(false); }
+  };
+
+  const handleCertify = async () => {
+    if (!formData.FileCode || !formData.SName) {
+      alert('Please select or fill in student details (File Code and First Name required).');
+      return;
+    }
+    setFormSaving(true);
+    try {
+      if (students.some(s => s.FileCode === formData.FileCode)) {
+        await api.updateStudent(formData.FileCode, formData);
+      } else {
+        await api.createStudent(formData);
+      }
+      await fetchAllData();
+    } catch (err: any) {
+      console.warn('Auto-save before certifying:', err.message);
+    } finally {
+      setFormSaving(false);
+    }
+    setShowCertificateModal(true);
   };
 
   const handleDelete = async () => {
@@ -117,10 +163,6 @@ export const StudentManagement: React.FC = () => {
   // Visible calendar months (last 3 with data)
   const calMonths = MONTHS.slice(6, 9);
   const calYear = 2021;
-
-  // For demo/show tomorrow: always display a real local photo from public/photos
-  // so the UI shows a real face even if the DB isn't connected.
-  const photoSrc = '/photos/22DME04A4-03.jpg';
 
   const bottomTabs: { id: BottomTab; label: string }[] = [
     { id: 'class', label: 'Class' },
@@ -157,13 +199,37 @@ export const StudentManagement: React.FC = () => {
         {/* ── TOP ROW: LEFT PANEL | FORM | CALENDAR ── */}
         <div className="flex gap-3">
 
-          {/* LEFT: Photo + metrics + navigator */}
-          <div className="flex-shrink-0 w-40 space-y-2">
-            <div className="w-full h-44 bg-[#222] border border-[#3a3a3a] overflow-hidden">
-              <img src={photoSrc} alt="Student"
+          {/* LEFT: Photo + G-Drive Link + metrics + navigator */}
+          <div className="flex-shrink-0 w-44 space-y-2">
+            {/* Photobox */}
+            <div className="w-full h-40 bg-[#222] border border-[#3a3a3a] overflow-hidden relative group rounded-sm">
+              <img
+                src={getDirectImageUrl(formData.SPhoto)}
+                alt="Student Photo"
                 className="w-full h-full object-cover object-top"
-                onError={e => { (e.target as HTMLImageElement).src =
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'; }}
+                onError={e => {
+                  const fileIdMatch = (formData.SPhoto || '').match(/(?:file\/d\/|[?&]id=)([a-zA-Z0-9_-]+)/);
+                  if (fileIdMatch && fileIdMatch[1]) {
+                    (e.target as HTMLImageElement).src = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w800`;
+                  } else {
+                    (e.target as HTMLImageElement).src = '/photos/22DME04A4-03.jpg';
+                  }
+                }}
+              />
+            </div>
+
+            {/* Google Drive / Photo Link Textbox */}
+            <div className="space-y-0.5 bg-[#141414] p-1.5 border border-[#2e2e2e] rounded-sm">
+              <label className="text-[10px] text-amber-400 font-semibold flex items-center gap-1">
+                <LinkIcon className="h-3 w-3" /> G-Drive / Photo Link:
+              </label>
+              <input
+                type="text"
+                placeholder="Paste Google Drive link..."
+                value={formData.SPhoto || ''}
+                onChange={e => upd('SPhoto', e.target.value)}
+                className="tit-input text-[10px] w-full bg-[#0d0d0d] border-amber-600/50 focus:border-amber-400 text-amber-200 py-0.5 px-1 font-mono"
+                title="Paste a Google Drive view link or direct image URL to update photobox"
               />
             </div>
 
@@ -202,12 +268,17 @@ export const StudentManagement: React.FC = () => {
             </div>
 
             <div className="flex gap-1">
-              <button onClick={handleCreateNew} className="bg-[#242424] border border-[#404040] text-zinc-200 px-2 py-1 hover:bg-[#333]"><Plus className="h-3 w-3" /></button>
-              <button onClick={handleDelete} className="bg-[#242424] border border-[#404040] text-rose-400 px-2 py-1 hover:bg-[#333]"><Minus className="h-3 w-3" /></button>
-              <button onClick={handleSave} className="tit-btn-orange flex-1 text-[10px] py-0.5">{formSaving ? '...' : 'Certify'}</button>
-              <button className="tit-btn-orange flex-1 text-[10px] py-0.5">Transcript</button>
+              <button onClick={handleCreateNew} title="Create New Student" className="bg-[#242424] border border-[#404040] text-zinc-200 px-2 py-1 hover:bg-[#333]"><Plus className="h-3 w-3" /></button>
+              <button onClick={handleDelete} title="Delete Selected Student" className="bg-[#242424] border border-[#404040] text-rose-400 px-2 py-1 hover:bg-[#333]"><Minus className="h-3 w-3" /></button>
+              <button onClick={handleSave} disabled={formSaving} title="Save to Database" className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold flex-1 text-[10px] py-0.5 flex items-center justify-center gap-0.5">
+                <Save className="h-3 w-3" /> {formSaving ? '...' : 'Save'}
+              </button>
+              <button onClick={handleCertify} disabled={formSaving} title="Generate Certificate" className="tit-btn-orange flex-1 text-[10px] py-0.5 flex items-center justify-center gap-0.5 font-bold">
+                <Award className="h-3 w-3" /> Certify
+              </button>
             </div>
           </div>
+
 
           {/* CENTER: two-column form */}
           <div className="flex-1 min-w-0 space-y-1">
@@ -510,6 +581,190 @@ export const StudentManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* CERTIFICATE MODAL */}
+      {showCertificateModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-4 overflow-y-auto backdrop-blur-sm print:p-0 print:bg-white print:static">
+          {/* Controls Bar */}
+          <div className="w-[1100px] max-w-full flex items-center justify-between bg-[#1f1f1f] border border-[#3a3a3a] px-4 py-2.5 rounded-t-lg shadow-xl print:hidden">
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-amber-400" />
+              <span className="text-white font-bold text-sm">Certificate Preview & Issue</span>
+              <span className="text-xs text-amber-400 font-mono bg-amber-950/80 px-2 py-0.5 border border-amber-700/50 rounded">
+                {formData.FileCode || 'STUDENT'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.print()}
+                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs px-3 py-1.5 rounded flex items-center gap-1.5 shadow transition-all cursor-pointer"
+              >
+                <Printer className="h-4 w-4" /> Print / Save PDF
+              </button>
+              <button
+                onClick={() => setShowCertificateModal(false)}
+                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-3 py-1.5 rounded flex items-center gap-1 border border-zinc-600 transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" /> Close
+              </button>
+            </div>
+          </div>
+
+          {/* Certificate Container matching brhan cna certificate.html */}
+          <div
+            className="w-[1100px] h-[800px] bg-gradient-to-br from-white to-[#f4f4f5] relative shadow-2xl overflow-hidden print:w-[1100px] print:h-[800px] print:shadow-none text-zinc-900 border border-amber-500/30 select-text"
+            style={{ fontFamily: "'Montserrat', sans-serif" }}
+          >
+            {/* SVG Stethoscope Edges */}
+            <svg viewBox="0 0 1045 800" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 5, pointerEvents: 'none' }}>
+              <defs>
+                <linearGradient id="gold-orange-grad" x1="0%" y1="0%" x2="150%" y2="100%">
+                  <stop offset="0%" stopColor="#D4AF37" />
+                  <stop offset="40%" stopColor="#FBF5B7" />
+                  <stop offset="60%" stopColor="#F97316" />
+                  <stop offset="100%" stopColor="#D4AF37" />
+                </linearGradient>
+
+                <linearGradient id="metal-grad" x1="0%" y1="0%" x2="150%" y2="100%">
+                  <stop offset="0%" stopColor="#f8fafc"/>
+                  <stop offset="50%" stopColor="#94a3b8"/>
+                  <stop offset="100%" stopColor="#e2e8f0"/>
+                </linearGradient>
+
+                <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                  <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000" floodOpacity="0.12" />
+                </filter>
+              </defs>
+
+              <path d="M 1020 160 L 1020 740 A 30 30 0 0 1 990 770 L 40 770 A 30 30 0 0 1 10 740 L 10 40 A 30 30 0 0 1 40 10 L 890 10 A 30 30 0 0 1 920 40 L 920 100" fill="none" stroke="url(#gold-orange-grad)" strokeWidth="11" filter="url(#shadow)" strokeLinecap="round" strokeLinejoin="round"/>
+              <polygon points="1010,160 1030,160 1020,140" fill="url(#metal-grad)" filter="url(#shadow)"/>
+              <path d="M 1020 145 C 990 110, 990 80, 990 40" fill="none" stroke="url(#metal-grad)" strokeWidth="6" filter="url(#shadow)" strokeLinecap="round"/>
+              <path d="M 1020 145 C 1050 110, 1050 80, 1050 40" fill="none" stroke="url(#metal-grad)" strokeWidth="6" filter="url(#shadow)" strokeLinecap="round"/>
+              <ellipse cx="990" cy="35" rx="5" ry="9" fill="#27272a" transform="rotate(-15 990 35)"/>
+              <ellipse cx="1050" cy="35" rx="5" ry="9" fill="#27272a" transform="rotate(15 1050 35)"/>
+              <circle cx="920" cy="120" r="30" fill="#ffffff" stroke="url(#gold-orange-grad)" strokeWidth="7" filter="url(#shadow)"/>
+              <circle cx="920" cy="120" r="16" fill="url(#metal-grad)"/>
+              <circle cx="920" cy="120" r="5" fill="#27272a"/>
+            </svg>
+
+            {/* Left Sidebar Logo */}
+            <div style={{ position: 'absolute', left: '45px', top: '8%', height: '68%', width: '315px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', zIndex: 10 }}>
+              <img src="/brhan logo.png" alt="Brhan Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', filter: 'drop-shadow(0 15px 25px rgba(249, 115, 22, 0.2))', opacity: 0.95 }} />
+            </div>
+
+            {/* Contact Info */}
+            <div style={{ position: 'absolute', left: '45px', top: '72%', width: '315px', textAlign: 'center', color: '#52525b', fontSize: '10.5px', lineHeight: 1.55, margin: 0, zIndex: 15 }}>
+              <strong style={{ color: '#B8862B', fontSize: '11px', letterSpacing: '2.5px', display: 'block', marginBottom: '4px' }}>LOCATION</strong>
+              Kansanga opposite<br />Eco Mart next to Jolly Court<br />Kampala, Uganda
+              
+              <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, #C89B2C, transparent)', margin: '15px 0' }}></div>
+              
+              <strong style={{ color: '#B8862B', fontSize: '11px', letterSpacing: '2.5px', display: 'block', marginBottom: '4px' }}>CONTACT</strong>
+              +256 708 520 186 <br /> https://www.brhan.academy <br /> brhanacademykampala@gmail.com
+            </div>
+
+            {/* Content Layer */}
+            <div style={{ position: 'absolute', right: '50px', top: '50px', bottom: '50px', width: '650px', padding: '20px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', zIndex: 10 }}>
+
+              {/* Photo Box Placeholder / Real Photo */}
+              <div style={{ position: 'absolute', top: '15px', left: '15px', width: '100px', height: '125px', border: '2px dashed #C89B2C', backgroundColor: '#fcfcfd', borderRadius: '4px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.03)', zIndex: 15, overflow: 'hidden' }}>
+                {formData.SPhoto ? (
+                  <img
+                    src={getDirectImageUrl(formData.SPhoto)}
+                    alt="Student Photo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/photos/22DME04A4-03.jpg';
+                    }}
+                  />
+                ) : (
+                  <>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C89B2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span style={{ fontSize: '9px', fontWeight: 600, color: '#71717a', letterSpacing: '2px', marginTop: '8px', textTransform: 'uppercase' }}>Photo</span>
+                  </>
+                )}
+              </div>
+
+              <h1 style={{ fontSize: '48px', fontWeight: 700, color: '#18181b', letterSpacing: '6px', marginTop: '10px', marginBottom: '-5px' }}>
+                CERTIFICATE
+              </h1>
+              <h2 style={{ fontSize: '22px', fontWeight: 300, color: '#52525b', letterSpacing: '10px', marginBottom: '40px' }}>
+                OF COMPLETION
+              </h2>
+
+              <div style={{ fontSize: '14px', fontWeight: 500, color: '#3f3f46', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '25px' }}>
+                This certificate is proudly presented to
+              </div>
+
+              {/* Student Name */}
+              <div style={{ width: '100%', borderBottom: '1px solid #C89B2C', paddingBottom: '10px', marginBottom: '30px' }}>
+                <h3 style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontStyle: 'italic',
+                  fontWeight: 700,
+                  fontSize: '44px',
+                  lineHeight: 1.2,
+                  background: 'linear-gradient(to right, #8A5A12 0%, #B8862B 35%, #D4AF37 70%, #F0C75E 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  padding: '0 10px'
+                }}>
+                  {[formData.SName, formData.FathersName, formData.GrandFathersName].filter(Boolean).join(' ') || 'Student Name'}
+                </h3>
+              </div>
+
+              <p style={{ fontSize: '14px', fontWeight: 400, color: '#52525b', lineHeight: 1.9, maxWidth: '550px', marginBottom: '25px' }}>
+                has successfully completed a rigorous six-month training programme, demonstrating exceptional practical skills, medical knowledge, and unwavering dedication to the field of healthcare.
+              </p>
+
+              <div style={{ fontSize: '11px', fontWeight: 500, color: '#3f3f46', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '5px' }}>
+                Awarded Title
+              </div>
+              <h4 style={{ fontSize: '22px', fontWeight: 700, color: '#18181b', letterSpacing: '2px', marginBottom: 'auto' }}>
+                {formData.CourseTakenInTIT || formData.Department || 'CERTIFIED NURSING ASSISTANT'}
+              </h4>
+
+              {/* Footer */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', marginTop: '40px', marginBottom: '20px' }}>
+                
+                <div style={{ textAlign: 'center', width: '200px' }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: 700, color: '#18181b', height: '35px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '5px' }}>
+                    {formData.DateOfGraduation || formData.DateOfRegistration || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+                  <div style={{ borderBottom: '1px solid #18181b', marginBottom: '8px' }}></div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#71717a', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                    DATE OF COMPLETION
+                  </div>
+                </div>
+
+                {/* Central Authentic Gold Seal */}
+                <div style={{ width: '110px', height: '110px', background: 'linear-gradient(135deg, #FFDF73, #D4AF37, #996B1C, #D4AF37, #FFDF73)', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4)', position: 'relative', transform: 'translateY(15px)' }}>
+                  <div style={{ width: '94px', height: '94px', border: '1px solid #fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#18181b' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#D4AF37', letterSpacing: '1px', marginBottom: '2px' }}>2026</div>
+                    <div style={{ fontSize: '10px', fontWeight: 500, color: '#fff', letterSpacing: '3px' }}>AWARD</div>
+                    <div style={{ color: '#D4AF37', fontSize: '12px', letterSpacing: '2px', marginTop: '4px' }}>★★★</div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center', width: '200px' }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: 700, color: '#18181b', height: '35px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '5px' }}></div>
+                  <div style={{ borderBottom: '1px solid #18181b', marginBottom: '8px' }}></div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#71717a', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                    DEAN OF NURSING SCHOOL
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
